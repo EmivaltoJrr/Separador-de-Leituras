@@ -1,112 +1,71 @@
-import os
+from io import BytesIO
+
+from flask import Flask, jsonify, render_template, request, send_file
+
+import banco_dados
 import processamento
 import word_service
 
-def ler_arquivo_txt():
-    print("\n--- ARQUIVOS DISPONÍVEIS ---")
-    arquivos = [f for f in os.listdir('.') if f.lower().endswith('.txt') and os.path.isfile(f)]
-    
-    if not arquivos:
-        print(">> Nenhum arquivo .txt encontrado.")
-        return []
+app = Flask(__name__)
+app.json.sort_keys = False  # mantém a ordem das colunas: Históricos, Profetas, Cartas, Evangelho
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB é mais do que suficiente para texto
 
-    for i, arquivo in enumerate(arquivos, 1):
-        print(f"{i} - {arquivo}")
-    
-    while True:
-        entrada = input("\nDigite o número do arquivo (ou 0 para voltar): ")
-        if not entrada.isdigit(): continue
-        escolha = int(entrada)
-        if escolha == 0: return []
-        if 1 <= escolha <= len(arquivos):
-            nome = arquivos[escolha - 1]
-            break
+
+def _ler_requisicao():
+    dados = request.get_json(silent=True) or {}
+    texto = dados.get("texto", "")
+    formato = dados.get("formato", processamento.FORMATO_COMPLETO)
+    ignorar = bool(dados.get("ignorar_desconhecidas", False))
+    if not isinstance(texto, str):
+        texto = ""
+    return texto, formato, ignorar
+
+
+@app.get("/")
+def index():
+    return render_template("index.html")
+
+
+@app.post("/api/processar")
+def processar():
+    """Classifica o texto e devolve o resumo (pré-visualização) + erros."""
+    texto, formato, _ = _ler_requisicao()
+    leituras, erros = processamento.classificar_texto(texto)
+    return jsonify({
+        "resumo": processamento.organizar(leituras, formato),
+        "erros": erros,
+        "total": len(leituras),
+    })
+
+
+@app.post("/api/gerar")
+def gerar():
+    """Gera o .docx em memória e devolve como download."""
+    texto, formato, ignorar = _ler_requisicao()
+    leituras, erros = processamento.classificar_texto(texto)
+
+    if erros and not ignorar:
+        return jsonify({"mensagem": "Existem siglas não reconhecidas.", "erros": erros}), 422
+    if not leituras:
+        return jsonify({"mensagem": "Nenhuma leitura válida foi informada.", "erros": []}), 400
 
     try:
-        print(f"\nLendo: '{nome}'...")
-        with open(nome, 'r', encoding='utf-8') as f:
-            return [linha.strip() for linha in f.readlines() if linha.strip()]
-    except Exception as e:
-        print(f"Erro: {e}")
-        return []
+        conteudo = word_service.gerar_arquivo_word(processamento.organizar(leituras, formato))
+    except word_service.ErroGeracaoWord as e:
+        return jsonify({"mensagem": str(e), "erros": []}), 500
 
-def entrada_manual():
-    leituras = []
-    print("\nDigite as leituras (ex: 'Is 50,4'). Enter vazio para terminar.")
-    while True:
-        entrada = input(">> ")
-        if not entrada.strip() or entrada.lower() == "sair": break
-        leituras.append(entrada)
-    return leituras
+    return send_file(
+        BytesIO(conteudo),
+        as_attachment=True,
+        download_name=banco_dados.NOME_DOWNLOAD,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
 
-def main():
-    print("\n" + "="*50)
-    print(" ORGANIZADOR LITÚRGICO - MODULAR (V7)")
-    print("="*50)
-    
-    # 1. Entrada
-    print("1 - Escolher arquivo .txt")
-    print("2 - Digitar manualmente")
-    op = input("Opção: ").strip()
-    
-    if op == '1':   raw = ler_arquivo_txt()
-    elif op == '2': raw = entrada_manual()
-    else: return
 
-    if not raw: return
+@app.errorhandler(413)
+def arquivo_grande(_):
+    return jsonify({"mensagem": "Texto muito grande (limite de 1 MB).", "erros": []}), 413
 
-    # 2. Processamento (Agora guardamos os dados brutos processados)
-    dados_processados = [] # Lista de tuplas: (categoria, texto_completo, texto_abrev)
-    fila = list(raw)
-    
-    print("\nProcessando e separando...")
-    while fila:
-        item = fila.pop(0)
-        cat, t_full, t_abrev = processamento.identificar_leitura(item)
-
-        if cat == "Desconhecido" or cat == "Erro":
-            print(f"\n[!] DÚVIDA: '{item}'")
-            corrigido = input("    Corrija (ou Enter para ignorar): ")
-            if corrigido.strip(): fila.insert(0, corrigido)
-        else:
-            # Guardamos tudo na memória temporária
-            dados_processados.append((cat, t_full, t_abrev))
-
-    # 3. Resumo na Tela (Mostra sempre o Completo para ficar bonito)
-    # Criamos um dict temporário só para exibição
-    resumo_visual = {"Históricos": [], "Profetas": [], "Cartas": [], "Evangelho": []}
-    for cat, t_full, _ in dados_processados:
-        if cat in resumo_visual:
-            resumo_visual[cat].append(t_full)
-
-    print("\n" + "-"*30 + "\nRESUMO DA SEPARAÇÃO\n" + "-"*30)
-    for k, v in resumo_visual.items():
-        if v:
-            print(f"[{k}]:")
-            for l in v: print(f"  - {l}")
-    print("-" * 30)
-
-    # 4. Decisão e Geração do Word
-    resp = input("\nDeseja gerar o documento Word? (s/n): ").lower()
-    if resp == 's':
-        print("\nComo você quer preencher o arquivo?")
-        print("1 - Abreviado (ex: Gn 12,1)")
-        print("2 - Completo  (ex: Gênesis 12,1)")
-        tipo_fmt = input("Opção: ").strip()
-        
-        # Monta o dicionário final baseado na escolha
-        organizacao_final = {"Históricos": [], "Profetas": [], "Cartas": [], "Evangelho": []}
-        
-        for cat, t_full, t_abrev in dados_processados:
-            if cat in organizacao_final:
-                if tipo_fmt == '1':
-                    organizacao_final[cat].append(t_abrev)
-                else:
-                    organizacao_final[cat].append(t_full)
-        
-        word_service.gerar_arquivo_word(organizacao_final)
-    else:
-        print("Finalizado.")
 
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)

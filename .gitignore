@@ -1,5 +1,7 @@
 site/
 .venv
 venv
-
 .agents/
+__pycache__/
+*.pyc
+legacy/

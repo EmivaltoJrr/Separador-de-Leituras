@@ -1,0 +1,131 @@
+:root {
+  --bg: #f5f3ef;
+  --card: #ffffff;
+  --texto: #1f1d1a;
+  --suave: #6b665e;
+  --borda: #ddd8cf;
+  --primaria: #7a2e2e;
+  --primaria-hover: #5f2222;
+  --erro-bg: #fdecec;
+  --erro-borda: #e5a3a3;
+  --erro-texto: #8a1f1f;
+  --ok-bg: #eaf5ec;
+  --ok-texto: #1e5b2b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171614;
+    --card: #211f1c;
+    --texto: #ece8e1;
+    --suave: #a39d93;
+    --borda: #3a3631;
+    --primaria: #c56b6b;
+    --primaria-hover: #d98585;
+    --erro-bg: #3a1f1f;
+    --erro-borda: #6e3434;
+    --erro-texto: #f3b4b4;
+    --ok-bg: #1d3223;
+    --ok-texto: #a8dcb3;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--texto);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.container { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+
+h1 { margin: 0 0 4px; font-size: 1.8rem; }
+h2 { margin: 0 0 16px; font-size: 1.2rem; }
+.subtitulo { margin: 0 0 24px; color: var(--suave); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+.linha-topo > label:first-child { font-weight: 600; }
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--texto);
+  font: 15px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace;
+  resize: vertical;
+}
+textarea:focus { outline: 2px solid var(--primaria); outline-offset: 1px; }
+
+.dica { margin: 6px 0 16px; font-size: .85rem; color: var(--suave); }
+code { font-size: .9em; padding: 0 4px; border-radius: 4px; background: var(--bg); }
+
+.formato { border: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.formato legend { font-weight: 600; margin-bottom: 6px; padding: 0; }
+.exemplo { color: var(--suave); font-size: .9em; }
+.checkbox { display: block; margin-bottom: 20px; color: var(--suave); }
+
+.acoes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+
+.btn {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn:disabled { opacity: .6; cursor: wait; }
+.btn-primario { background: var(--primaria); color: #fff; }
+.btn-primario:hover:not(:disabled) { background: var(--primaria-hover); }
+.btn-secundario { background: transparent; color: var(--texto); border-color: var(--borda); font-size: .9rem; padding: 8px 14px; }
+.btn-secundario:hover { border-color: var(--suave); }
+
+.mensagem { margin-top: 16px; padding: 12px 14px; border-radius: 8px; }
+.mensagem.ok { background: var(--ok-bg); color: var(--ok-texto); }
+.mensagem.erro { background: var(--erro-bg); color: var(--erro-texto); }
+
+.erros {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--erro-borda);
+  background: var(--erro-bg);
+  color: var(--erro-texto);
+  border-radius: 8px;
+}
+.erros p { margin: 0 0 8px; }
+.erros ul { margin: 0; padding: 0; list-style: none; }
+.erros li button {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.erros li button:hover, .erros li button:focus-visible { background: rgba(0, 0, 0, .08); }
+.erros .num { opacity: .7; margin-right: 8px; }
+
+.total { font-weight: 400; color: var(--suave); font-size: .9rem; }
+.colunas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.coluna h3 { margin: 0 0 8px; font-size: .95rem; border-bottom: 2px solid var(--primaria); padding-bottom: 4px; }
+.coluna ul { margin: 0; padding: 0; list-style: none; font-size: .9rem; }
+.coluna li { padding: 3px 0; border-bottom: 1px dashed var(--borda); }
+.coluna .vazio { color: var(--suave); font-style: italic; }
+
+@media (max-width: 640px) {
+  .colunas { grid-template-columns: repeat(2, 1fr); }
+  .acoes .btn { flex: 1; }
+}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Separador de Leituras</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Separador de Leituras</h1>
+      <p class="subtitulo">Cole as referências bíblicas (uma por linha) e gere a tabela em Word, já separada em Históricos, Profetas, Cartas e Evangelho.</p>
+    </header>
+
+    <section class="card">
+      <div class="linha-topo">
+        <label for="texto">Leituras</label>
+        <label class="btn btn-secundario" for="arquivo">Carregar arquivo .txt</label>
+        <input type="file" id="arquivo" accept=".txt,text/plain" hidden>
+      </div>
+      <textarea id="texto" rows="14" spellcheck="false" placeholder="Gn 12,1-4&#10;Is 50,4&#10;1Cor 1,27-28&#10;Jo 3,16&#10;Jó 19,25"></textarea>
+      <p class="dica">Jó: use <code>Jó</code> ou <code>Job</code>. <code>Jo</code> é João.</p>
+
+      <fieldset class="formato">
+        <legend>Formato no documento</legend>
+        <label><input type="radio" name="formato" value="abreviado"> Abreviado <span class="exemplo">(Gn 12,1)</span></label>
+        <label><input type="radio" name="formato" value="completo" checked> Completo <span class="exemplo">(Gênesis 12,1)</span></label>
+      </fieldset>
+
+      <label class="checkbox"><input type="checkbox" id="ignorar"> Ignorar linhas não reconhecidas</label>
+
+      <div class="acoes">
+        <button id="btn-previa" class="btn btn-secundario" type="button">Pré-visualizar</button>
+        <button id="btn-gerar" class="btn btn-primario" type="button">Gerar Documento Word</button>
+      </div>
+
+      <div id="mensagem" class="mensagem" role="status" hidden></div>
+      <div id="erros" class="erros" hidden>
+        <p><strong>Siglas não reconhecidas.</strong> Clique em uma linha para ir até ela no texto e corrigir:</p>
+        <ul id="lista-erros"></ul>
+      </div>
+    </section>
+
+    <section id="previa" class="card" hidden>
+      <h2>Pré-visualização <span id="total" class="total"></span></h2>
+      <div id="colunas" class="colunas"></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
