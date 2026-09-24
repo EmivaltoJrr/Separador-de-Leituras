@@ -5,3 +5,4 @@ venv
 __pycache__/
 *.pyc
 legacy/
+relatorio_de_como_era.md
